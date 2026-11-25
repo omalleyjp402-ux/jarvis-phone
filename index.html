@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Jarvis</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffb43c;--gold-hi:#ffd98a;--gold-dim:rgba(255,180,60,.55);--gold-faint:rgba(255,180,60,.14);--line:rgba(255,180,60,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;color:var(--gold);font-family:'Share Tech Mono',ui-monospace,monospace;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+canvas#holo{position:fixed;inset:0;width:100%;height:100%}
+.top{position:fixed;z-index:5;top:calc(env(safe-area-inset-top) + 12px);left:16px;right:16px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;line-height:1.7}
+.top .row{display:flex;justify-content:space-between;gap:10px}
+.k{color:var(--gold-dim)} .v{color:var(--gold-hi)}
+#title{font-family:Rajdhani,sans-serif;font-weight:700;font-size:20px;letter-spacing:.5em;color:var(--gold-hi);text-shadow:0 0 12px rgba(255,180,60,.6)}
+#wire{margin-top:6px;text-transform:none;letter-spacing:.03em;font-size:11px;line-height:1.45}
+#wire div{color:var(--gold-dim);margin-top:3px} #wire div.hi{color:var(--gold-hi)} #wire b{font-weight:400;margin-right:6px;color:var(--gold-dim)}
+.bottom{position:fixed;z-index:5;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 14px);text-align:center}
+#caption{font-family:Rajdhani,sans-serif;font-size:19px;font-weight:500;color:var(--gold-hi);text-shadow:0 0 12px rgba(255,180,60,.5);min-height:48px;max-height:30vh;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;margin-bottom:10px;line-height:1.25}
+#state{font-size:11px;letter-spacing:.55em;color:var(--gold-dim);margin-bottom:12px}
+.btns{display:flex;gap:8px;justify-content:center}
+.btns div{flex:1;max-width:120px;border:1px solid var(--line);padding:10px 4px;font-size:10px;letter-spacing:.25em;background:rgba(0,0,0,.45)}
+.btns div:active{background:var(--gold-faint)}
+#typeRow{display:none;margin-top:10px;gap:8px} #typeRow.open{display:flex}
+#typeIn{flex:1;background:rgba(0,0,0,.6);border:1px solid var(--line);color:var(--gold-hi);padding:10px;font-family:inherit;font-size:16px;outline:none;-webkit-user-select:text;user-select:text}
+#typeGo{border:1px solid var(--line);padding:10px 14px;font-size:11px;letter-spacing:.2em}
+.bars{display:none} #inBar,#outBar{display:block}
+/* sheet: weekly card */
+#wk{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateY(120%);transition:transform .35s ease;border:1px solid var(--line);background:linear-gradient(160deg,rgba(40,24,0,.95),rgba(0,0,0,.95));padding:16px;touch-action:none}
+#wk.open{transform:none}
+#wk .h{font-family:Rajdhani,sans-serif;letter-spacing:.35em;color:var(--gold-hi);font-size:12px}
+#wk .row{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.15em;line-height:2;text-transform:uppercase} #wk b{font-weight:400;color:var(--gold-hi)}
+#wk .tabs{display:flex;gap:8px;margin:10px 0} #wk .tabs span{font-size:10px;letter-spacing:.2em;padding:5px 8px;border:1px solid var(--line)} #wk .tabs span.on{background:var(--gold-faint);color:var(--gold-hi)}
+#wkPsy{margin-top:10px;font-family:Rajdhani,sans-serif;font-size:15px;line-height:1.45;color:var(--gold-hi)}
+#wkGrip{width:40px;height:4px;background:var(--gold-dim);margin:0 auto 10px;border-radius:2px}
+/* gallery */
+#gal{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.95);padding:calc(env(safe-area-inset-top) + 40px) 10px 30px;touch-action:none}
+#gal.open{display:flex}
+#galImg{max-width:100%;max-height:62vh;object-fit:contain;border:1px solid var(--line);transition:opacity .2s}
+#galInfo{margin-top:12px;font-family:Rajdhani,sans-serif;font-size:16px;color:var(--gold-hi);text-align:center}
+#galNote{margin-top:6px;font-size:12px;color:var(--gold-dim);text-align:center;line-height:1.4}
+#galCount{position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:16px;font-size:11px;letter-spacing:.3em;color:var(--gold-dim)}
+#galClose{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:14px;font-size:11px;letter-spacing:.25em;border:1px solid var(--line);padding:8px 12px}
+#lock{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;font-family:Rajdhani,sans-serif;font-size:18px;color:var(--gold-hi);background:#000}
+</style>
+</head>
+<body>
+<canvas id="holo"></canvas>
+<div class="top">
+  <div class="row"><span id="title">J.A.R.V.I.S.</span><span class="v" id="clock">--:--</span></div>
+  <div class="row"><span><span class="k">NQ </span><span class="v" id="nqTxt">-</span></span><span><span class="k">Range </span><span class="v" id="rngTxt">-</span></span></div>
+  <div class="row"><span><span class="k">Today </span><span class="v" id="todayTxt">-</span></span><span><span class="k">Link </span><span class="v" id="linkTxt">Standby</span></span></div>
+  <div id="wire"></div>
+</div>
+<div class="bottom">
+  <div id="caption"></div>
+  <div id="state">TAP THE CORE</div>
+  <div class="btns"><div id="bWeek">WEEKLY</div><div id="bCharts">CHARTS</div><div id="bType">TYPE</div></div>
+  <div id="typeRow"><input id="typeIn" placeholder="Type a command, sir..." autocomplete="off"><div id="typeGo">SEND</div></div>
+</div>
+<div class="bars"><i id="inBar"></i><i id="outBar"></i></div>
+<div id="wk"><div id="wkGrip"></div><div class="h">WEEKLY REVIEW</div><div class="tabs"><span data-p="this_week" class="on">THIS WEEK</span><span data-p="last_week">LAST WEEK</span></div><div id="wkBody"></div></div>
+<div id="gal"><div id="galCount"></div><div id="galClose">CLOSE ✕</div><img id="galImg" alt=""><div id="galInfo"></div><div id="galNote"></div></div>
+<div id="lock">Open Jarvis from your private link, sir.</div>
+<script>
+/* ================================================================
+   HOLOGRAM RENDERER  (true 3D projection + additive bloom)
+   ================================================================ */
+const cv = document.getElementById('holo');
+const ctx = cv.getContext('2d');
+const scene = document.createElement('canvas');
+const sx = scene.getContext('2d');
+let W=0,H=0,DPR=1,CX=0,CY=0,R=0;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  scene.width = W*DPR; scene.height = H*DPR;
+  ctx.setTransform(1,0,0,1,0,0); sx.setTransform(DPR,0,0,DPR,0,0);
+  CX = W/2; const portrait = H > W*1.2; CY = portrait ? H*0.47 : H/2 - H*0.03; R = Math.min(W,H)*(portrait ? 0.30 : 0.27);
+}
+addEventListener('resize', resize); resize();
+
+// seeded random so the structure is stable between frames
+let seed = 7; const rnd = () => (seed = (seed*16807)%2147483647, (seed-1)/2147483646);
+
+// Core: fibonacci sphere of particles
+const CORE_N = 1100;
+const core = [];
+for(let i=0;i<CORE_N;i++){
+  const y = 1 - (i/(CORE_N-1))*2, rr = Math.sqrt(1-y*y), th = i*2.399963;
+  const depth = Math.pow(rnd(), 0.6);            // fill the volume, denser at the shell
+  core.push({x:Math.cos(th)*rr, y, z:Math.sin(th)*rr, d:depth, ph:rnd()*6.283, sp:0.5+rnd()*1.5});
+}
+// Wireframe shell vertices for filaments
+const SHELL = [];
+for(let la=-60; la<=60; la+=30) for(let lo=0; lo<360; lo+=30){
+  const a=la*Math.PI/180, b=lo*Math.PI/180;
+  SHELL.push({x:Math.cos(a)*Math.cos(b), y:Math.sin(a), z:Math.cos(a)*Math.sin(b)});
+}
+// Filaments: jagged laser lines core -> shell
+const FIL = [];
+for(let i=0;i<46;i++){
+  FIL.push({c:Math.floor(rnd()*CORE_N), s:Math.floor(rnd()*SHELL.length), j:[rnd()-.5,rnd()-.5,rnd()-.5,rnd()-.5], ph:rnd()*6.28, life:rnd()});
+}
+// Gimbal rings: 3D tilted bands, each with own axis + speed
+const RINGS = [
+  {r:0.74, tx:1.20, tz:0.20, sp: 0.22, seg:72,  fill:0.62, w:1.4, ticks:true},
+  {r:0.84, tx:0.55, tz:1.05, sp:-0.15, seg:40,  fill:0.80, w:1.8, ticks:false},
+  {r:0.93, tx:1.55, tz:-0.6, sp: 0.10, seg:120, fill:0.45, w:1.0, ticks:true},
+  {r:1.02, tx:0.95, tz:0.35, sp:-0.07, seg:8,   fill:0.70, w:1.8, ticks:false},
+];
+// Data glyphs that orbit the outer dial
+const GLYPHS = Array.from({length:18},()=>({a:rnd()*6.283, txt:'', t:0}));
+const HEX = '0123456789ABCDEF';
+const randHex = n => Array.from({length:n},()=>HEX[Math.floor(Math.random()*16)]).join('');
+
+// state machine for visuals
+let state='idle', energy=.3, energyT=.3, spin=1, spinT=1, inLvl=0, outLvl=0, t=0, last=performance.now();
+const STATE_TARGET = {idle:[.32,1], listening:[.78,1.3], thinking:[.62,3.2], speaking:[.7,1.6], offline:[.15,.6]};
+
+function rot(p, ax, ay, az){
+  let {x,y,z}=p, c, s, t1;
+  c=Math.cos(ax); s=Math.sin(ax); t1=y*c-z*s; z=y*s+z*c; y=t1;
+  c=Math.cos(ay); s=Math.sin(ay); t1=x*c+z*s; z=-x*s+z*c; x=t1;
+  c=Math.cos(az); s=Math.sin(az); t1=x*c-y*s; y=x*s+y*c; x=t1;
+  return {x,y,z};
+}
+const FOV = 3.2;
+function proj(p, rad){ const k = FOV/(FOV + p.z); return {X:CX+p.x*rad*k, Y:CY+p.y*rad*k, k, z:p.z}; }
+const depthA = z => 0.25 + 0.75*((1 - z)/2);   // front (z=-1) bright, back dim
+
+function gold(a, hot=0){ // hot 0..1 shifts toward white-gold
+  const r=255, g=Math.round(170+70*hot), b=Math.round(50+140*hot*hot);
+  return `rgba(${r},${g},${b},${Math.max(0,Math.min(1,a))})`;
+}
+
+function drawScene(dt){
+  sx.clearRect(0,0,W,H);
+  sx.globalCompositeOperation='lighter';
+  const e = energy, lvl = Math.max(inLvl*.8, outLvl);
+  const ay = t*0.18*spin, ax = 0.42 + Math.sin(t*0.13)*0.12;
+
+  // ---- faint radial grid behind everything
+  sx.lineWidth=1;
+  for(let i=1;i<=4;i++){
+    sx.beginPath(); sx.arc(CX,CY,R*(1.25+i*0.22),0,Math.PI*2);
+    sx.strokeStyle=gold(0.025+0.01*e); sx.stroke();
+  }
+
+  // ---- wireframe shell (lat/long) with parallax: back lines dimmer & thinner
+  const SR = R*0.60*(1+lvl*0.04);
+  const drawPoly = (pts) => {
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i], b=pts[i+1];
+      const z=(a.z+b.z)/2, al=depthA(z)*(0.16+0.22*e);
+      sx.beginPath(); sx.moveTo(a.X,a.Y); sx.lineTo(b.X,b.Y);
+      sx.strokeStyle=gold(al, z<-0.3?0.25:0); sx.lineWidth=z<0?0.9:0.5; sx.stroke();
+    }
+  };
+  for(let la=-75; la<=75; la+=15){
+    const pts=[]; const a=la*Math.PI/180;
+    for(let lo=0; lo<=360; lo+=8){ const b=lo*Math.PI/180;
+      pts.push(proj(rot({x:Math.cos(a)*Math.cos(b),y:Math.sin(a),z:Math.cos(a)*Math.sin(b)},ax,ay,0),SR)); }
+    drawPoly(pts);
+  }
+  for(let lo=0; lo<180; lo+=15){
+    const pts=[]; const b=lo*Math.PI/180;
+    for(let la=0; la<=360; la+=8){ const a=la*Math.PI/180;
+      pts.push(proj(rot({x:Math.cos(a)*Math.cos(b),y:Math.sin(a),z:Math.cos(a)*Math.sin(b)},ax,ay,0),SR)); }
+    drawPoly(pts);
+  }
+
+  // ---- core particles (counter-rotating, breathing, audio reactive)
+  const CRr = R*0.34*(1 + 0.06*Math.sin(t*2.1) + lvl*0.22);
+  const cay = -t*0.45*spin, cax = t*0.21;
+  const coreP = new Array(CORE_N);
+  for(let i=0;i<CORE_N;i++){
+    const p=core[i];
+    const jitter = 1 + Math.sin(t*p.sp*3 + p.ph)*0.04*(1+lvl*4);
+    const q = rot({x:p.x*p.d*jitter, y:p.y*p.d*jitter, z:p.z*p.d*jitter}, cax, cay, 0);
+    const P = proj(q, CRr); coreP[i]=P;
+    const a = depthA(q.z)*(0.35+0.55*e)*(0.5+0.5*p.d);
+    const s = (0.6+1.4*(1-p.d)*0.6)*P.k*(1+lvl*0.6);
+    sx.fillStyle = gold(a, (1-p.d)*0.9);
+    sx.fillRect(P.X-s/2, P.Y-s/2, s, s);
+  }
+  // hot centre glow
+  const cg = sx.createRadialGradient(CX,CY,0,CX,CY,CRr*1.15);
+  cg.addColorStop(0, gold(0.55+0.4*lvl, 1));
+  cg.addColorStop(0.25, gold(0.22+0.25*e, .6));
+  cg.addColorStop(1, gold(0,0));
+  sx.fillStyle=cg; sx.beginPath(); sx.arc(CX,CY,CRr*1.15,0,Math.PI*2); sx.fill();
+
+  // ---- fractal filaments core -> shell
+  for(const f of FIL){
+    f.life += dt*(0.25+e*0.8);
+    if(f.life>1){ f.life=0; f.c=Math.floor(Math.random()*CORE_N); f.s=Math.floor(Math.random()*SHELL.length);
+      f.j=[Math.random()-.5,Math.random()-.5,Math.random()-.5,Math.random()-.5]; }
+    const fade = Math.sin(f.life*Math.PI);
+    if(fade<0.05) continue;
+    const A = coreP[f.c];
+    const sv = proj(rot(SHELL[f.s],ax,ay,0), SR);
+    const dx=sv.X-A.X, dy=sv.Y-A.Y, nx=-dy, ny=dx;
+    const m1={X:A.X+dx*.33+nx*f.j[0]*.25, Y:A.Y+dy*.33+ny*f.j[1]*.25};
+    const m2={X:A.X+dx*.66+nx*f.j[2]*.18, Y:A.Y+dy*.66+ny*f.j[3]*.18};
+    sx.beginPath(); sx.moveTo(A.X,A.Y); sx.lineTo(m1.X,m1.Y); sx.lineTo(m2.X,m2.Y); sx.lineTo(sv.X,sv.Y);
+    sx.strokeStyle=gold(fade*(0.18+0.45*e)*depthA(sv.z), .4); sx.lineWidth=0.7; sx.stroke();
+    // node at the shell end
+    sx.fillStyle=gold(fade*0.9*depthA(sv.z), .8); sx.fillRect(sv.X-1.5,sv.Y-1.5,3,3);
+  }
+
+  // ---- 3D gimbal rings (gyroscope)
+  for(let ri=0; ri<RINGS.length; ri++){
+    const g=RINGS[ri];
+    const rr = R*g.r*(1+lvl*0.03*(ri+1));
+    const spinA = t*g.sp*spin*1.4;
+    const tilt = (p)=>rot(rot(p,0,spinA,0), g.tx + Math.sin(t*0.1+ri)*0.08, 0, g.tz + ay*0.3);
+    const N = 240;
+    let prev=null;
+    for(let i=0;i<=N;i++){
+      const a=i/N*Math.PI*2;
+      const P = proj(tilt({x:Math.cos(a),y:0,z:Math.sin(a)}), rr);
+      const segPos = (i/N*g.seg)%1;
+      const on = segPos < g.fill;
+      if(prev && on){
+        const z=(P.z+prev.z)/2;
+        sx.beginPath(); sx.moveTo(prev.X,prev.Y); sx.lineTo(P.X,P.Y);
+        sx.strokeStyle=gold(depthA(z)*(0.28+0.5*e), z<-.4?.35:0);
+        sx.lineWidth=g.w*(z<0?1.15:0.6)*P.k; sx.stroke();
+      }
+      if(g.ticks && i%4===0){
+        const Pin = proj(tilt({x:Math.cos(a)*0.95,y:0,z:Math.sin(a)*0.95}), rr);
+        sx.beginPath(); sx.moveTo(P.X,P.Y); sx.lineTo(Pin.X,Pin.Y);
+        sx.strokeStyle=gold(depthA(P.z)*(0.15+0.3*e)); sx.lineWidth=0.6; sx.stroke();
+      }
+      prev=P;
+    }
+  }
+
+  // ---- screen-space HUD dials (flat, around the sphere)
+  const D1 = R*1.18, D2=R*1.27, D3=R*1.36;
+  // tick ring
+  const tickRot = t*0.05*spin;
+  for(let i=0;i<180;i++){
+    const a=i/180*Math.PI*2+tickRot, long=i%15===0, mid=i%5===0;
+    const r0=D1, r1=D1+(long?14:mid?8:4);
+    sx.beginPath(); sx.moveTo(CX+Math.cos(a)*r0,CY+Math.sin(a)*r0); sx.lineTo(CX+Math.cos(a)*r1,CY+Math.sin(a)*r1);
+    sx.strokeStyle=gold(long?0.55:0.22+0.15*e); sx.lineWidth=long?1.4:0.7; sx.stroke();
+  }
+  // segmented arc ring, counter-rotating
+  const segRot = -t*0.09*spin;
+  for(let s=0;s<36;s++){
+    if(s%6===5) continue;
+    const a0=s/36*Math.PI*2+segRot, a1=a0+Math.PI*2/36*0.78;
+    sx.beginPath(); sx.arc(CX,CY,D2,a0,a1);
+    sx.strokeStyle=gold(0.18+0.3*e); sx.lineWidth=s%6===0?4:1.6; sx.stroke();
+  }
+  // sweeping arcs (faster when thinking)
+  for(let k=0;k<3;k++){
+    const a0 = t*(0.6+k*0.35)*spin*(k%2?-1:1) + k*2.1;
+    sx.beginPath(); sx.arc(CX,CY,D3+k*7,a0,a0+0.5+0.6*e);
+    sx.strokeStyle=gold(0.35+0.4*e, .3); sx.lineWidth=k===0?2.5:1.2; sx.stroke();
+  }
+  // outer thin ring + degree labels
+  sx.beginPath(); sx.arc(CX,CY,D3+30,0,Math.PI*2); sx.strokeStyle=gold(0.12+0.1*e); sx.lineWidth=0.8; sx.stroke();
+  sx.font='10px "Share Tech Mono", monospace'; sx.textAlign='center'; sx.textBaseline='middle';
+  for(let i=0;i<12;i++){
+    const a=i/12*Math.PI*2+tickRot;
+    const x=CX+Math.cos(a)*(D1-14), y=CY+Math.sin(a)*(D1-14);
+    sx.fillStyle=gold(0.3+0.2*e); sx.fillText(String((i*30)%360).padStart(3,'0'), x, y);
+  }
+  // orbiting data glyphs
+  for(const gl of GLYPHS){
+    gl.t-=dt; if(gl.t<=0){ gl.txt=randHex(4)+'.'+randHex(2); gl.t=0.2+Math.random()*1.4; }
+    gl.a += dt*0.04*spin;
+    const x=CX+Math.cos(gl.a)*(D3+46), y=CY+Math.sin(gl.a)*(D3+46);
+    sx.fillStyle=gold(0.18+0.25*e); sx.fillText(gl.txt, x, y);
+  }
+  // crosshair reticle
+  sx.strokeStyle=gold(0.15+0.15*e); sx.lineWidth=0.8;
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    sx.beginPath(); sx.moveTo(CX+dx*(D3+60),CY+dy*(D3+60)); sx.lineTo(CX+dx*(D3+90),CY+dy*(D3+90)); sx.stroke();
+  }
+  sx.globalCompositeOperation='source-over';
+}
+
+function frame(now){
+  const dt = Math.min(0.05,(now-last)/1000); last=now; t+=dt;
+  const [eT,sT] = STATE_TARGET[state]||STATE_TARGET.idle;
+  energyT=eT; spinT=sT;
+  energy += (energyT + outLvl*0.25 - energy)*Math.min(1,dt*3);
+  spin   += (spinT-spin)*Math.min(1,dt*2);
+  drawScene(dt);
+  // composite: black, wide bloom, tight bloom, sharp
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.globalCompositeOperation='lighter';
+  ctx.filter=`blur(${18*DPR}px)`; ctx.globalAlpha=0.55+0.35*energy; ctx.drawImage(scene,0,0);
+  ctx.filter=`blur(${5*DPR}px)`;  ctx.globalAlpha=0.7; ctx.drawImage(scene,0,0);
+  ctx.filter='none'; ctx.globalAlpha=1; ctx.drawImage(scene,0,0);
+  ctx.globalCompositeOperation='source-over';
+  document.getElementById('inBar').style.width=(inLvl*100).toFixed(0)+'%';
+  document.getElementById('outBar').style.width=(outLvl*100).toFixed(0)+'%';
+  inLvl*=0.9; outLvl*=0.9;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================================================================
+
+/* ================================================================
+   JARVIS PHONE: tap the core to talk. Gemini hears your voice directly.
+   Nothing personal lives in this file: the private link (?k=...) unlocks
+   the prompt, memory and journal from JP's own server.
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const BASE = 'https://jourrjdifizfbaeytbei.supabase.co/functions/v1/';
+const K = new URLSearchParams(location.search).get('k') || '';
+if(!/^[0-9a-f]{32}$/.test(K)) $('lock').style.display='flex';
+const ep = name => `${BASE}${name}?t=${K}`;
+async function post(fn, op, args, ms=20000){ try{ const r=await fetch(ep(fn),{method:'POST',body:JSON.stringify({op,args:args||{}}),signal:AbortSignal.timeout(ms)}); return await r.json(); }catch(e){ return { error:'unavailable: '+e.message }; } }
+const tool = (op,args) => post('jarvis-tools', op, args);
+const news = (op,args) => post('jarvis-news', op, args, 55000);
+
+const dub = () => new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',hour:'2-digit',minute:'2-digit'}).format(new Date());
+setInterval(()=>{ $('clock').textContent = dub(); }, 1000);
+let capT=null;
+function caption(t, keep){ $('caption').textContent=t; clearTimeout(capT); if(!keep) capT=setTimeout(()=>{ if(!live) $('caption').textContent=''; }, 9000); }
+function setState(s){ state=s; $('state').textContent = s==='idle' ? 'TAP THE CORE' : s.toUpperCase(); }
+
+/* ---------- audio: one context for mic (downsampled to 16 kHz) and playback (24 kHz) ---------- */
+let ac=null, mic=null, micNode=null, outGain=null, outAn=null, playHead=0, playing=[];
+const isSpeaking = () => playing.length>0;
+const WORKLET = `
+class Cap extends AudioWorkletProcessor{
+  constructor(){ super(); this.ratio = sampleRate/16000; this.acc=0; this.sum=0; this.n=0; this.buf=new Int16Array(640); this.k=0; }
+  process(inputs){ const ch=inputs[0][0]; if(!ch) return true; let pk=0;
+    for(let i=0;i<ch.length;i++){ this.sum+=ch[i]; this.n++; this.acc+=1;
+      if(this.acc>=this.ratio){ this.acc-=this.ratio; let s=this.sum/this.n; this.sum=0; this.n=0; s=Math.max(-1,Math.min(1,s)); if(Math.abs(s)>pk) pk=Math.abs(s);
+        this.buf[this.k++] = s<0 ? s*0x8000 : s*0x7fff;
+        if(this.k===this.buf.length){ this.port.postMessage({pcm:this.buf.buffer.slice(0), pk}); this.k=0; } } }
+    return true; }
+}
+registerProcessor('cap', Cap);`;
+async function ensureAudio(){
+  if(!ac){
+    ac = new (window.AudioContext||window.webkitAudioContext)();
+    outGain = ac.createGain(); outAn = ac.createAnalyser(); outAn.fftSize=256; outGain.connect(outAn); outAn.connect(ac.destination);
+    const d=new Uint8Array(outAn.fftSize);
+    (function meter(){ outAn.getByteTimeDomainData(d); let pk=0; for(const v of d){ const a=Math.abs(v-128)/128; if(a>pk) pk=a; } outLvl=Math.max(outLvl,Math.min(1,pk*1.8)); requestAnimationFrame(meter); })();
+    await ac.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'})));
+  }
+  if(ac.state!=='running') await ac.resume();
+}
+async function startMic(){
+  if(mic) return;
+  mic = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1 } });
+  const src = ac.createMediaStreamSource(mic);
+  micNode = new AudioWorkletNode(ac,'cap');
+  const mute = ac.createGain(); mute.gain.value = 0;
+  src.connect(micNode); micNode.connect(mute); mute.connect(ac.destination);
+  micNode.port.onmessage = e => { inLvl=Math.max(inLvl,Math.min(1,e.data.pk*2.5)); if(e.data.pk>0.06) lastVoice=Date.now(); sendAudio(e.data.pcm); };
+}
+function stopMic(){ try{ micNode&&micNode.disconnect(); mic&&mic.getTracks().forEach(t=>t.stop()); }catch(e){} mic=micNode=null; }
+const b64 = buf => { const u=new Uint8Array(buf); let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+function playPcm(data){
+  const bin=atob(data), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  const i16=new Int16Array(u.buffer), f=new Float32Array(i16.length); for(let i=0;i<i16.length;i++) f[i]=i16[i]/32768;
+  const buf=ac.createBuffer(1,f.length,24000); buf.copyToChannel(f,0);
+  const src=ac.createBufferSource(); src.buffer=buf; src.connect(outGain);
+  playHead=Math.max(playHead, ac.currentTime+0.03); src.start(playHead); playHead+=buf.duration;
+  playing.push(src); src.onended=()=>{ playing=playing.filter(x=>x!==src); if(!playing.length && live) setState('listening'); };
+  setState('speaking');
+}
+function stopPlayback(){ playing.forEach(s=>{ try{s.stop()}catch(e){} }); playing=[]; if(ac) playHead=ac.currentTime; }
+
+/* ---------- tools ---------- */
+const P = (props, req) => ({ type:'OBJECT', properties:props, required:req||[] });
+const FDECL = [
+  { name:'remember', description:'Save a lasting fact, preference or note about JP to long-term memory.', parameters:P({ fact:{type:'STRING'} },['fact']) },
+  { name:'forget', description:'Delete memories that contain the given words.', parameters:P({ about:{type:'STRING'} },['about']) },
+  { name:'list_memories', description:'List everything saved in long-term memory.', parameters:P({}) },
+  { name:'journal_stats', description:"Statistics from JP's trading journal: trades, wins, win rate, P and L in dollars, R, rule breaks, by session and weekday.", parameters:P({ period:{type:'STRING', enum:['today','yesterday','this_week','last_week','this_month','last_month','last_30_days','last_90_days','all']} },['period']) },
+  { name:'recent_trades', description:'The most recent trades from his journal with notes.', parameters:P({ count:{type:'INTEGER'} }) },
+  { name:'today', description:"Today's trades, P and L and loss count.", parameters:P({}) },
+  { name:'market', description:'NQ futures price and change, high impact US events in Irish time with his ratings, and headlines.', parameters:P({ days:{type:'INTEGER'} }) },
+  { name:'latest_news', description:"The live news wire: market moving headlines already filtered for Nasdaq impact, plus Trump's Truth Social posts word for word. ALWAYS use this for news, Trump, tariffs, the Fed, wars or why the market is moving.", parameters:P({ hours:{type:'INTEGER'} }) },
+  { name:'think_deeper', description:'Hand a hard question to a stronger reasoning model and read its answer back. Include the relevant facts in context.', parameters:P({ question:{type:'STRING'}, context:{type:'STRING'} },['question']) },
+  { name:'show_weekly', description:'Show the weekly review card on screen and return its numbers.', parameters:P({ period:{type:'STRING', enum:['this_week','last_week']} }) },
+  { name:'trade_images', description:'Open his journal trade chart screenshots on screen in a swipeable gallery.', parameters:P({ period:{type:'STRING', enum:['today','yesterday','this_week','last_week','this_month','last_month','last_30_days']} },['period']) },
+  { name:'close_gallery', description:'Close the gallery or weekly card.', parameters:P({}) },
+];
+async function runTool(name, args){
+  if(name==='latest_news') return await news('latest_news', args);
+  if(name==='think_deeper'){ caption('Thinking that through, sir...', true); return await news('think', args); }
+  if(name==='show_weekly') return await openWeekly(args.period||'this_week');
+  if(name==='close_gallery'){ closeGallery(); closeWeekly(); return { ok:true }; }
+  const r = await tool(name, args);
+  if(name==='trade_images' && r.items){ if(r.items.length) openGallery(r.items); return { shown:r.items.length, trades:r.items.map(({urls,...x})=>x) }; }
+  return r;
+}
+
+/* ---------- Gemini Live session (through JP's server) ---------- */
+const MODELS = [ { model:'gemini-2.5-flash-native-audio-latest', search:true }, { model:'gemini-2.5-flash-native-audio-latest', search:false }, { model:'gemini-3.8-live', search:false } ];
+let live=null, ready=false, starting=false, step=0, tries=0, byUs=false, resume=null, lastVoice=0, generating=false, dropAudio=false, outBuf='', inBuf='', pending=null, wakeLock=null;
+const IDLE_MS = 5*60000;
+async function buildPrompt(){
+  const [p, c] = await Promise.all([ post('jarvis-prompt',null,null), tool('context') ]);
+  const now = new Date().toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  let s = String(p.prompt||'You are Jarvis, JP\'s assistant. Address him as sir.').replace('{{NOW}}', now);
+  if(c && !c.error){ const t=c.today||{}; s += `\nMEMORY (what he asked you to remember): ${(c.memories||[]).join('; ')||'nothing yet'}.\nTODAY SO FAR: ${t.count||0} funded trades, ${t.pnl||0} dollars, ${t.r||0}R, ${t.losses||0} losses.`; }
+  s += `\nPHONE: He is talking to you on his iPhone. You hear his voice directly; if something sounds unclear, ask instead of guessing. Ignore background noise and other people. Screen sharing and opening tabs are not available here.`;
+  return s;
+}
+async function start(firstText){
+  if(live || starting){ if(firstText) pending=firstText; return; }
+  starting=true; pending=firstText||null; setState('thinking'); $('linkTxt').textContent='Connecting';
+  try{ await ensureAudio(); await startMic(); }catch(e){ starting=false; setState('idle'); caption('I need microphone access, sir. Check Settings, Safari, Microphone.'); return; }
+  const sys = await buildPrompt();
+  starting=false;
+  const cfg = MODELS[step % MODELS.length];
+  const ws = live = new WebSocket(`wss://jourrjdifizfbaeytbei.supabase.co/functions/v1/jarvis-live?t=${K}&api=v1beta`);
+  ws.onopen = () => {
+    const tools=[{ functionDeclarations:FDECL }]; if(cfg.search) tools.unshift({ googleSearch:{} });
+    ws.send(JSON.stringify({ setup:{ model:'models/'+cfg.model,
+      generationConfig:{ responseModalities:['AUDIO'], speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName:'Charon' } } } },
+      systemInstruction:{ parts:[{ text:sys }] }, inputAudioTranscription:{}, outputAudioTranscription:{},
+      realtimeInputConfig:{ automaticActivityDetection:{ startOfSpeechSensitivity:'START_SENSITIVITY_LOW', endOfSpeechSensitivity:'END_SENSITIVITY_LOW', silenceDurationMs:700 } },
+      sessionResumption: resume ? { handle:resume } : {}, tools } }));
+  };
+  ws.onmessage = async ev => {
+    const raw = typeof ev.data==='string' ? ev.data : await ev.data.text(); let m; try{ m=JSON.parse(raw); }catch(e){ return; }
+    if(m.sessionResumptionUpdate?.resumable && m.sessionResumptionUpdate.newHandle) resume=m.sessionResumptionUpdate.newHandle;
+    if(m.setupComplete!==undefined){
+      ready=true; tries=0; $('linkTxt').textContent='Online'; setState('listening'); lastVoice=Date.now();
+      if(!wakeLock && navigator.wakeLock) navigator.wakeLock.request('screen').then(l=>wakeLock=l).catch(()=>{});
+      if(pending){ ws.send(JSON.stringify({ realtimeInput:{ text:pending } })); pending=null; setState('thinking'); }
+      else caption('Yes, sir?');
+      return;
+    }
+    if(m.toolCall){
+      setState('thinking'); const calls=m.toolCall.functionCalls||[];
+      const out = await Promise.all(calls.map(async fc=>({ id:fc.id, name:fc.name, response:{ result: await runTool(fc.name, fc.args||{}) } })));
+      if(ws.readyState===1) ws.send(JSON.stringify({ toolResponse:{ functionResponses:out } })); return;
+    }
+    const sc=m.serverContent; if(!sc) return;
+    if(sc.modelTurn) generating=true;
+    if(sc.interrupted){ stopPlayback(); outBuf=''; }
+    if(sc.interrupted || sc.turnComplete){ generating=false; dropAudio=false; }
+    if(sc.inputTranscription?.text){ inBuf+=sc.inputTranscription.text; lastVoice=Date.now(); caption(inBuf.trim(), true);
+      if(/\b(that'?s all|that will be all|goodbye|good night|go to sleep|deactivate|stand down)\b/i.test(inBuf)){ inBuf=''; stopPlayback(); caption('Standing by, sir.'); end(); return; } }
+    if(sc.outputTranscription?.text){ if(inBuf){ inBuf=''; outBuf=''; } outBuf+=sc.outputTranscription.text; caption(outBuf.trim(), true); }
+    for(const p of (sc.modelTurn?.parts||[])) if(p.inlineData?.data && !dropAudio) playPcm(p.inlineData.data);
+    if(sc.turnComplete){ inBuf=''; outBuf=''; lastVoice=Date.now(); if(!isSpeaking()) setState('listening'); }
+  };
+  ws.onclose = ev => {
+    const mine = byUs; byUs=false; live=null; const wasReady=ready; ready=false;
+    if(!mine && tries<4){ tries++; if(!wasReady) step++; setTimeout(()=>start(), 400); return; }   // free-tier server limit or model refusal: reconnect quietly
+    if(!wasReady && !mine) caption('Link refused, sir. Try again in a moment.');
+    cleanup();
+  };
+}
+function sendAudio(pcm){ if(live && ready && live.readyState===1) live.send(JSON.stringify({ realtimeInput:{ audio:{ data:b64(pcm), mimeType:'audio/pcm;rate=16000' } } })); }
+function sendText(t){ if(!t) return; if(live && ready){ stopPlayback(); live.send(JSON.stringify({ realtimeInput:{ text:t } })); setState('thinking'); lastVoice=Date.now(); } else start(t); }
+function end(){ resume=null; const w=live; live=null; if(w){ byUs=true; try{ w.close(1000,'bye'); }catch(e){} } cleanup(); }
+function cleanup(){ stopMic(); ready=false; $('linkTxt').textContent='Standby'; if(!isSpeaking()) setState('idle'); if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
+setInterval(()=>{ if(live && ready && !isSpeaking() && Date.now()-lastVoice > IDLE_MS){ caption('Standing by, sir. Tap me when you need me.'); end(); } }, 5000);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && live) end(); });
+
+/* ---------- tap the core ---------- */
+$('holo').addEventListener('click', e => {
+  if($('gal').classList.contains('open')) return;
+  if(Math.hypot(e.clientX-CX, e.clientY-CY) > R*1.5) return;
+  if(live || starting){ stopPlayback(); caption('Standing by, sir.'); end(); }
+  else start();
+});
+$('bType').onclick = () => { $('typeRow').classList.toggle('open'); if($('typeRow').classList.contains('open')) $('typeIn').focus(); };
+$('typeGo').onclick = () => { const v=$('typeIn').value.trim(); if(v){ $('typeIn').value=''; sendText(v); } };
+$('typeIn').addEventListener('keydown', e => { if(e.key==='Enter') $('typeGo').click(); });
+
+/* ---------- HUD feeds ---------- */
+async function pollHud(){
+  const h = await tool('hud'); if(!h || h.error) return;
+  if(h.nq) $('nqTxt').textContent = `${Number(h.nq.price).toLocaleString('en-US',{maximumFractionDigits:2})} ${h.nq.changePct>=0?'+':''}${h.nq.changePct}%`;
+  const t=h.today||{}; $('todayTxt').textContent = `${t.count||0}/2  ${t.pnl<0?'-':'+'}$${Math.abs(t.pnl||0)}`;
+}
+async function pollRange(){ const r=await news('range'); if(r && !r.error){ $('rngTxt').textContent=`${r.todayRange} pts ${r.ratio}x`; $('rngTxt').style.color = r.ratio>=2?'#ff8a5c':''; } }
+let wireLast=null; const wire=[];
+const hhmm = iso => new Date(iso||Date.now()).toLocaleTimeString('en-GB',{timeZone:'Europe/Dublin',hour:'2-digit',minute:'2-digit'});
+function renderWire(){ $('wire').innerHTML = wire.slice(0,2).map(w=>`<div class="${w.impact==='high'?'hi':''}"><b>${hhmm(w.published_at)}</b>${String(w.summary).replace(/</g,'&lt;')}</div>`).join(''); }
+async function pollWire(){
+  if(wireLast===null){ const r=await news('alerts',{init:true}); if(r.lastId==null) return; wireLast=r.lastId; const n=await news('latest_news',{hours:6}); (n.marketMoving||[]).slice(0,2).reverse().forEach(a=>wire.unshift(a)); renderWire(); return; }
+  const r=await news('alerts',{after_id:wireLast}); if(!r || r.error) return; wireLast=Math.max(wireLast, r.lastId||0);
+  for(const a of (r.alerts||[])){ wire.unshift(a); if(a.impact==='high' && live && ready) sendText(`[AUTOMATIC ALERT] Breaking, from ${a.source}: ${a.summary}. Tell him in one or two sentences what is new and why it could move Nasdaq.`); }
+  wire.length=Math.min(wire.length,10); renderWire();
+}
+if(K){ pollHud(); pollRange(); pollWire(); setInterval(pollHud,60000); setInterval(pollRange,300000); setInterval(pollWire,30000); }
+
+/* ---------- weekly card (swipe down to close) ---------- */
+const wkCache={};
+async function openWeekly(period){
+  $('wk').classList.add('open'); document.querySelectorAll('#wk .tabs span').forEach(s=>s.classList.toggle('on', s.dataset.p===period));
+  if(!wkCache[period] || Date.now()-wkCache[period].t>600000){ $('wkBody').innerHTML='<div class="row"><span>Analysing your week...</span></div>'; const r=await tool('weekly_card',{period}); if(r.error){ $('wkBody').innerHTML='<div class="row"><span>Could not load</span></div>'; return r; } wkCache[period]={t:Date.now(),r}; }
+  const r=wkCache[period].r;
+  $('wkBody').innerHTML = `<div class="row"><span>Win rate</span><b>${r.winRatePct}%</b></div><div class="row"><span>Trades</span><b>${r.trades}</b></div><div class="row"><span>Wins / losses</span><b>${r.wins} / ${r.losses}</b></div><div class="row"><span>Net P&amp;L</span><b>${r.netPnl<0?'-':'+'}$${Math.abs(r.netPnl)}</b></div><div class="row"><span>Total R</span><b>${r.totalR}R</b></div><div class="row"><span>Rule breaks</span><b>${r.ruleBreaks}</b></div><div id="wkPsy"></div>`;
+  $('wkPsy').textContent = r.psychology||''; return r;
+}
+function closeWeekly(){ $('wk').classList.remove('open'); }
+$('bWeek').onclick = () => $('wk').classList.contains('open') ? closeWeekly() : openWeekly('this_week');
+document.querySelectorAll('#wk .tabs span').forEach(s=>s.onclick=e=>{ e.stopPropagation(); openWeekly(s.dataset.p); });
+let wy=null; $('wk').addEventListener('touchstart',e=>{ wy=e.touches[0].clientY; },{passive:true});
+$('wk').addEventListener('touchend',e=>{ if(wy==null) return; const dy=e.changedTouches[0].clientY-wy; wy=null; if(dy>60) closeWeekly(); });
+
+/* ---------- trade chart gallery (swipe left/right, swipe down to close) ---------- */
+let gal=[], gi=0;
+function openGallery(items){ gal=[]; for(const t of items) for(const u of (t.urls||[])) gal.push({...t,url:u}); if(!gal.length) return; gi=0; $('gal').classList.add('open'); showGal(); }
+function showGal(){ gi=(gi+gal.length)%gal.length; const g=gal[gi]; $('galImg').style.opacity=0; $('galImg').onload=()=>$('galImg').style.opacity=1; $('galImg').src=g.url;
+  $('galInfo').textContent=`${new Date(g.date+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} · ${g.time||''} ${g.session||''} · ${g.dir||''} · ${g.pnl<0?'-':'+'}$${Math.abs(g.pnl)} · ${g.r==null?'':g.r+'R'}`;
+  $('galNote').textContent=g.note||''; $('galCount').textContent=`TRADE ${gi+1} / ${gal.length}`; }
+function closeGallery(){ $('gal').classList.remove('open'); }
+$('galClose').onclick = closeGallery;
+let gx=null, gy=null; $('gal').addEventListener('touchstart',e=>{ gx=e.touches[0].clientX; gy=e.touches[0].clientY; },{passive:true});
+$('gal').addEventListener('touchend',e=>{ if(gx==null) return; const dx=e.changedTouches[0].clientX-gx, dy=e.changedTouches[0].clientY-gy; gx=gy=null;
+  if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)){ gi+=dx<0?1:-1; showGal(); } else if(dy>80) closeGallery(); });
+$('bCharts').onclick = async () => { caption('Pulling up this week, sir.'); const r=await tool('trade_images',{period:'this_week'}); if(r.items&&r.items.length) openGallery(r.items); else { const l=await tool('trade_images',{period:'last_week'}); if(l.items&&l.items.length){ caption('Nothing this week yet, sir. Here is last week.'); openGallery(l.items); } else caption('No trade charts logged, sir.'); } };
+
+setState('idle'); caption('Good day, sir. Tap the core to talk.');
+</script>
+</body>
+</html>
